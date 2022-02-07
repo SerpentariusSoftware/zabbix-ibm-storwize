@@ -102,7 +102,6 @@ def advanced_info_of_resource(resource, needed_attributes, storwize_connection, 
 	    id_of_resource - list of additional parameters, that uniquely determine resource.
 	    Example: for PSU - first element of list is enclosure_id, secondary element of list is PSU_id"""
 
-
 	if resource == 'lsenclosure':
 		stdin, stdout, stderr = storwize_connection.exec_command('svcinfo {0} {1}'.format(resource, id_of_resource[0]))
 	elif resource == 'lsenclosurepsu':
@@ -113,7 +112,7 @@ def advanced_info_of_resource(resource, needed_attributes, storwize_connection, 
 		storwize_logout(storwize_connection)
 		sys.exit("1100")
 	else:
-		attributes_of_resource = stdout.read() # Получили расширенные атрибуты в виде строки (variable contain advanced attributes in string)
+		attributes_of_resource = stdout.read().decode() # Получили расширенные атрибуты в виде строки (variable contain advanced attributes in string)
 		dict_of_attributes = {} # Здесь будут храниться расширенные атрибуты ресурса в формате ключ-значение (will contain advanced attributes in key-value)
 		try:
 			for attribute in attributes_of_resource.split('\n'): # Разделил строку и получили список из расшренные атрибутов
@@ -140,9 +139,12 @@ def convert_capacity_to_bytes(capacity_in_string):
 
 	convert_to_bytes = {'TB':1024**4, 'GB':1024**3, 'MB':1024**2, 'KB':1024}
 	try:
-		list_of_capacity = re.search('([\d\.]+)([\D]+)',capacity_in_string) # Ищем по регулярному выражению и находим две группы совпадения
-		converted_capacity = float(list_of_capacity.group(1)) * convert_to_bytes[list_of_capacity.group(2)]
-		return int(converted_capacity) # Конвертация в целые числа, потому что для float в заббиксе есть ограничение (convert to type ineger)
+		if capacity_in_string != "0":
+			list_of_capacity = re.search('([\d\.]+)([\D]+)',capacity_in_string) # Ищем по регулярному выражению и находим две группы совпадения
+			converted_capacity = float(list_of_capacity.group(1)) * convert_to_bytes[list_of_capacity.group(2)]
+			return int(float(converted_capacity)) # Конвертация в целые числа, потому что для float в заббиксе есть ограничение (convert to type ineger)
+		else:
+			return 0
 	except Exception as oops:
 		storwize_logger.error("Error occurs in converting capactity_in_string to capactiy_in_bytes".format(oops))
 
@@ -152,8 +154,7 @@ def send_data_to_zabbix(zabbix_data, storage_name):
 	sender_command = "/usr/bin/zabbix_sender"
 	config_path = "/etc/zabbix/zabbix_agentd.conf"
 	time_of_create_file = int(time.time())
-	temp_file = "/tmp/{0}_{1}.tmp".format(storage_name, time_of_create_file)
-
+	temp_file = "/tmp/zbx/{0}_{1}.tmp".format(storage_name, time_of_create_file)
 	with open(temp_file, "w") as f:
 		f.write("")
 		f.write("\n".join(zabbix_data))
@@ -228,8 +229,8 @@ def discovering_resources(storwize_user, storwize_password, storwize_ip, storwiz
 	except Exception as oops:
 		storwize_logger.error("Error occurs in discovering - {0}".format(oops))
 		storwize_logout(storwize_connection)
-                sys.exit("1100")
-		
+		sys.exit("1100")
+
 	storwize_logout(storwize_connection)
 	return send_data_to_zabbix(xer, storage_name)
 
@@ -286,7 +287,7 @@ def get_status_resources(storwize_user, storwize_password, storwize_ip, storwize
 						enclosure_id = one_object["enclosure_id"]
 						psu_id = one_object["PSU_id"]
 						advanced_info = advanced_info_of_resource(resource, needed_attributes, storwize_connection, enclosure_id, psu_id)
-						
+
 						key_input_failed = "inFailed.{0}.[{1}.{2}]".format(resource, one_object["enclosure_id"], one_object["PSU_id"])
 						key_output_failed = "outFailed.{0}.[{1}.{2}]".format(resource, one_object["enclosure_id"], one_object["PSU_id"])
 						key_fan_failed = "fanFailed.{0}.[{1}.{2}]".format(resource, one_object["enclosure_id"], one_object["PSU_id"])
@@ -345,13 +346,13 @@ def main():
         list_resources = ['lsvdisk', 'lsmdisk', 'lsmdiskgrp', 'lsenclosure', 'lsenclosurebattery', 'lsenclosurepsu', 'lsenclosurecanister', 'lsdrive', 'lsportfc', 'lsportsas']
 
         if arguments.discovery:
-		storwize_logger.info("********************************* Starting Discovering *********************************")
+                storwize_logger.info("********************************* Starting Discovering *********************************")
                 result_discovery = discovering_resources(arguments.storwize_user, arguments.storwize_password, arguments.storwize_ip, arguments.storwize_port, arguments.storage_name, list_resources)
-                print result_discovery
+                print (result_discovery)
         elif arguments.status:
-		storwize_logger.info("********************************* Starting Get Status *********************************")
+                storwize_logger.info("********************************* Starting Get Status *********************************")
                 result_status = get_status_resources(arguments.storwize_user, arguments.storwize_password, arguments.storwize_ip, arguments.storwize_port, arguments.storage_name, list_resources)
-                print result_status
+                print (result_status)
 
 
 if __name__ == "__main__":
