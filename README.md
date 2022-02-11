@@ -50,8 +50,9 @@ Value of  --storage_name  is macros value {HOST.NAME}
 If you have executed this script from console from user root or from another user, please check access permission on file **/tmp/storwize_state.log**. It must be allow read, write to user zabbix.
 
 ## troubleshoot-ish
-You should run these until both --status and --discover returns 0
-If you get status 2 check the data you send to zabbix
-comment the line 163 in storewize_get_state.py srcipt "os.remove(temp_file)"
-now you'll have a file to submit to your zabbix the command is: 
+- !! DO NOT FORGET TO RELOAD CACHE ON SERVER/PROXY!!
+- You should run these until both --status and --discover returns 0
+- If you get status 2 check the data you send to zabbix comment the line 163 in storewize_get_state.py script "os.remove(temp_file)" now you'll have a file to submit to your zabbix the command is: 
+```bash
 /usr/bin/zabbix_sender -vv -c /etc/zabbix/zabbix_agentd.conf -s **storagename** -T -i /tmp/zbx/**filename**.tmp
+```
