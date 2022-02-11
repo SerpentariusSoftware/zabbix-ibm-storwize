@@ -4,9 +4,9 @@ https://github.com/Wolvverine/zabbix-ibm-storwize
 
 # changes
 this version works on 
-    - debian 11
-    - python 3.9.2
-    - Zabbix 5.0 LTS
+- debian 11
+- python 3.9.2
+- Zabbix 5.0 LTS
 
 # zabbix-ibm-storwize
 Python script for monitoring IBM Storwize storages
